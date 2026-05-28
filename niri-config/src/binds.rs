@@ -196,6 +196,8 @@ pub enum Action {
     MoveWindowUp,
     MoveWindowDownOrToWorkspaceDown,
     MoveWindowUpOrToWorkspaceUp,
+    MoveWindowUpOrToSmartWorkspaceUp(#[knuffel(property(name = "focus"), default = true)] bool),
+    MoveWindowDownOrToSmartWorkspaceDown(#[knuffel(property(name = "focus"), default = true)] bool),
     ConsumeOrExpelWindowLeft,
     #[knuffel(skip)]
     ConsumeOrExpelWindowLeftById(u64),
@@ -223,6 +225,8 @@ pub enum Action {
     FocusWorkspacePrevious,
     MoveWindowToWorkspaceDown(#[knuffel(property(name = "focus"), default = true)] bool),
     MoveWindowToWorkspaceUp(#[knuffel(property(name = "focus"), default = true)] bool),
+    MoveWindowToNewWorkspaceDown(#[knuffel(property(name = "focus"), default = true)] bool),
+    MoveWindowToNewWorkspaceUp(#[knuffel(property(name = "focus"), default = true)] bool),
     MoveWindowToWorkspace(
         #[knuffel(argument)] WorkspaceReference,
         #[knuffel(property(name = "focus"), default = true)] bool,
@@ -482,6 +486,12 @@ impl From<niri_ipc::Action> for Action {
                 Self::MoveWindowDownOrToWorkspaceDown
             }
             niri_ipc::Action::MoveWindowUpOrToWorkspaceUp {} => Self::MoveWindowUpOrToWorkspaceUp,
+            niri_ipc::Action::MoveWindowUpOrToSmartWorkspaceUp { focus } => {
+                Self::MoveWindowUpOrToSmartWorkspaceUp(focus)
+            }
+            niri_ipc::Action::MoveWindowDownOrToSmartWorkspaceDown { focus } => {
+                Self::MoveWindowDownOrToSmartWorkspaceDown(focus)
+            }
             niri_ipc::Action::ConsumeOrExpelWindowLeft { id: None } => {
                 Self::ConsumeOrExpelWindowLeft
             }
@@ -515,6 +525,12 @@ impl From<niri_ipc::Action> for Action {
             }
             niri_ipc::Action::MoveWindowToWorkspaceUp { focus } => {
                 Self::MoveWindowToWorkspaceUp(focus)
+            }
+            niri_ipc::Action::MoveWindowToNewWorkspaceDown { focus } => {
+                Self::MoveWindowToNewWorkspaceDown(focus)
+            }
+            niri_ipc::Action::MoveWindowToNewWorkspaceUp { focus } => {
+                Self::MoveWindowToNewWorkspaceUp(focus)
             }
             niri_ipc::Action::MoveWindowToWorkspace {
                 window_id: None,

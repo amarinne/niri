@@ -2117,6 +2117,34 @@ impl<W: LayoutElement> Layout<W> {
         monitor.move_to_workspace_down(focus);
     }
 
+    pub fn move_up_or_to_smart_workspace_up(&mut self, focus: bool) {
+        let Some(monitor) = self.active_monitor() else {
+            return;
+        };
+        monitor.move_up_or_to_smart_workspace_up(focus);
+    }
+
+    pub fn move_down_or_to_smart_workspace_down(&mut self, focus: bool) {
+        let Some(monitor) = self.active_monitor() else {
+            return;
+        };
+        monitor.move_down_or_to_smart_workspace_down(focus);
+    }
+
+    pub fn move_to_new_workspace_up(&mut self, focus: bool) {
+        let Some(monitor) = self.active_monitor() else {
+            return;
+        };
+        monitor.move_to_new_workspace_up(focus);
+    }
+
+    pub fn move_to_new_workspace_down(&mut self, focus: bool) {
+        let Some(monitor) = self.active_monitor() else {
+            return;
+        };
+        monitor.move_to_new_workspace_down(focus);
+    }
+
     pub fn move_to_workspace(
         &mut self,
         window: Option<&W::Id>,

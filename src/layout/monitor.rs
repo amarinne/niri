@@ -850,6 +850,88 @@ impl<W: LayoutElement> Monitor<W> {
         );
     }
 
+    pub fn move_up_or_to_smart_workspace_up(&mut self, focus: bool) {
+        if self.active_workspace().move_up() {
+            return;
+        }
+
+        if self.active_workspace_would_disappear_after_move() {
+            if self.active_workspace_idx > 0 {
+                self.move_to_workspace_up(focus);
+            }
+        } else {
+            self.move_to_new_workspace_up(focus);
+        }
+    }
+
+    pub fn move_down_or_to_smart_workspace_down(&mut self, focus: bool) {
+        if self.active_workspace().move_down() {
+            return;
+        }
+
+        if self.active_workspace_would_disappear_after_move() {
+            if self.active_workspace_idx + 1 < self.workspaces.len() {
+                self.move_to_workspace_down(focus);
+            }
+        } else {
+            self.move_to_new_workspace_down(focus);
+        }
+    }
+
+    pub fn move_to_new_workspace_up(&mut self, focus: bool) {
+        self.move_to_new_workspace_at(self.active_workspace_idx, focus);
+    }
+
+    pub fn move_to_new_workspace_down(&mut self, focus: bool) {
+        self.move_to_new_workspace_at(self.active_workspace_idx + 1, focus);
+    }
+
+    fn move_to_new_workspace_at(&mut self, idx: usize, focus: bool) {
+        let source_workspace_idx = self.active_workspace_idx;
+        if self.active_workspace_would_disappear_after_move() {
+            return;
+        }
+        let workspace = &mut self.workspaces[source_workspace_idx];
+        let Some(removed) = workspace.remove_active_tile(Transaction::new()) else {
+            return;
+        };
+
+        self.add_workspace_at(idx);
+        let target_idx = if idx <= source_workspace_idx {
+            idx
+        } else {
+            idx.min(self.workspaces.len() - 1)
+        };
+        let new_id = self.workspaces[target_idx].id();
+        let activate = if focus {
+            ActivateWindow::Yes
+        } else {
+            ActivateWindow::No
+        };
+
+        self.add_tile(
+            removed.tile,
+            MonitorAddWindowTarget::Workspace {
+                id: new_id,
+                column_idx: None,
+            },
+            activate,
+            true,
+            removed.width,
+            removed.is_full_width,
+            removed.is_floating,
+        );
+
+        if self.workspace_switch.is_none() {
+            self.clean_up_workspaces();
+        }
+    }
+
+    fn active_workspace_would_disappear_after_move(&self) -> bool {
+        let ws = &self.workspaces[self.active_workspace_idx];
+        ws.name().is_none() && ws.window_count() == 1
+    }
+
     pub fn move_to_workspace(
         &mut self,
         window: Option<&W::Id>,

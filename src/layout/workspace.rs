@@ -1570,6 +1570,10 @@ impl<W: LayoutElement> Workspace<W> {
         self.windows().next().is_some()
     }
 
+    pub fn window_count(&self) -> usize {
+        self.tiles().count()
+    }
+
     pub fn has_window(&self, window: &W::Id) -> bool {
         self.windows().any(|win| win.id() == window)
     }

@@ -1306,6 +1306,30 @@ impl State {
                 // FIXME: granular
                 self.niri.queue_redraw_all();
             }
+            Action::MoveWindowToNewWorkspaceDown(focus) => {
+                self.niri.layout.move_to_new_workspace_down(focus);
+                self.maybe_warp_cursor_to_focus();
+                // FIXME: granular
+                self.niri.queue_redraw_all();
+            }
+            Action::MoveWindowToNewWorkspaceUp(focus) => {
+                self.niri.layout.move_to_new_workspace_up(focus);
+                self.maybe_warp_cursor_to_focus();
+                // FIXME: granular
+                self.niri.queue_redraw_all();
+            }
+            Action::MoveWindowUpOrToSmartWorkspaceUp(focus) => {
+                self.niri.layout.move_up_or_to_smart_workspace_up(focus);
+                self.maybe_warp_cursor_to_focus();
+                // FIXME: granular
+                self.niri.queue_redraw_all();
+            }
+            Action::MoveWindowDownOrToSmartWorkspaceDown(focus) => {
+                self.niri.layout.move_down_or_to_smart_workspace_down(focus);
+                self.maybe_warp_cursor_to_focus();
+                // FIXME: granular
+                self.niri.queue_redraw_all();
+            }
             Action::MoveWindowToWorkspace(reference, focus) => {
                 if let Some((mut output, index)) =
                     self.niri.find_output_and_workspace_index(reference)
