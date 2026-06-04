@@ -435,6 +435,8 @@ struct InteractiveMoveData<W: LayoutElement> {
     ///
     /// This helps the pointer remain inside the window as it resizes.
     pub(self) pointer_ratio_within_window: (f64, f64),
+    /// Workspace where the move originated.
+    pub(self) source_workspace_id: WorkspaceId,
     /// Config overrides for the output where the window is currently located.
     ///
     /// Cached here to be accessible while an output is removed.
@@ -3919,16 +3921,18 @@ impl<W: LayoutElement> Layout<W> {
                 }
                 .band(sq_dist / INTERACTIVE_MOVE_START_THRESHOLD);
 
-                let (is_floating, tile, workspace_config) = self
+                let (is_floating, tile, source_workspace_id, workspace_config) = self
                     .workspaces_mut()
                     .find(|ws| ws.has_window(&window_id))
                     .map(|ws| {
+                        let source_workspace_id = ws.id();
                         let workspace_config = ws.layout_config().cloned().map(|c| (ws.id(), c));
                         (
                             ws.is_floating(&window_id),
                             ws.tiles_mut()
                                 .find(|tile| *tile.window().id() == window_id)
                                 .unwrap(),
+                            source_workspace_id,
                             workspace_config,
                         )
                     })
@@ -4035,6 +4039,7 @@ impl<W: LayoutElement> Layout<W> {
                     is_full_width,
                     is_floating,
                     pointer_ratio_within_window,
+                    source_workspace_id,
                     output_config,
                     workspace_config,
                 };
@@ -4241,6 +4246,7 @@ impl<W: LayoutElement> Layout<W> {
                     };
 
                 let win_id = move_.tile.window().id().clone();
+                let source_workspace_id = move_.source_workspace_id;
                 let tile_render_loc = move_.tile_render_location(zoom);
 
                 let ws_idx = match insert_ws {
@@ -4334,6 +4340,28 @@ impl<W: LayoutElement> Layout<W> {
                             move_.is_full_width,
                             true,
                         );
+                    }
+                }
+
+                if !allow_to_activate_workspace {
+                    let target_idx = mon
+                        .workspaces
+                        .iter()
+                        .position(|ws| ws.has_window(&win_id))
+                        .unwrap();
+                    let source_was_active = mon.workspaces[mon.active_workspace_idx].id()
+                        == source_workspace_id;
+                    let active_is_empty = !mon.workspaces[mon.active_workspace_idx]
+                        .has_windows_or_name();
+
+                    if source_was_active
+                        && active_is_empty
+                        && mon.active_workspace_idx != target_idx
+                    {
+                        mon.previous_workspace_id = Some(source_workspace_id);
+                        mon.active_workspace_idx = target_idx;
+                        mon.workspace_switch = None;
+                        mon.clean_up_workspaces();
                     }
                 }
 
