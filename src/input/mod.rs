@@ -3146,7 +3146,7 @@ impl State {
         let is_mru_open = self.niri.window_mru_ui.is_open();
 
         // Handle wheel scroll bindings.
-        if source == AxisSource::Wheel {
+        if source == AxisSource::Wheel && !self.is_inhibiting_shortcuts() {
             // If we have a scroll bind with current modifiers, then accumulate and don't pass to
             // Wayland. If there's no bind, reset the accumulator.
             let mods = self.niri.seat.get_keyboard().unwrap().modifier_state();
