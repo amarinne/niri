@@ -2038,6 +2038,153 @@ fn move_to_workspace_by_idx_does_not_leave_empty_workspaces() {
 }
 
 #[test]
+fn smart_workspace_move_creates_workspace_for_multi_window_source() {
+    let ops = [
+        Op::AddOutput(1),
+        Op::AddWindow {
+            params: TestWindowParams::new(1),
+        },
+        Op::AddWindow {
+            params: TestWindowParams::new(2),
+        },
+    ];
+
+    let mut layout = check_ops(ops);
+    layout.move_down_or_to_smart_workspace_down(true);
+    layout.verify_invariants();
+
+    let MonitorSet::Normal { monitors, .. } = &layout.monitor_set else {
+        unreachable!()
+    };
+    let monitor = &monitors[0];
+
+    assert_eq!(monitor.workspaces.len(), 3);
+    assert_eq!(monitor.active_workspace_idx, 1);
+    assert_eq!(
+        monitor.workspaces[0]
+            .windows()
+            .map(|window| window.0.id)
+            .collect::<Vec<_>>(),
+        [1]
+    );
+    assert_eq!(
+        monitor.workspaces[1]
+            .windows()
+            .map(|window| window.0.id)
+            .collect::<Vec<_>>(),
+        [2]
+    );
+}
+
+#[test]
+fn smart_workspace_move_creates_workspace_for_named_source() {
+    let ops = [
+        Op::AddOutput(1),
+        Op::SetWorkspaceName {
+            new_ws_name: 1,
+            ws_name: None,
+        },
+        Op::AddWindow {
+            params: TestWindowParams::new(1),
+        },
+    ];
+
+    let mut layout = check_ops(ops);
+    layout.move_down_or_to_smart_workspace_down(true);
+    layout.verify_invariants();
+
+    let MonitorSet::Normal { monitors, .. } = &layout.monitor_set else {
+        unreachable!()
+    };
+    let monitor = &monitors[0];
+
+    assert_eq!(monitor.workspaces.len(), 3);
+    assert_eq!(
+        monitor.workspaces[0].name().map(String::as_str),
+        Some("ws1")
+    );
+    assert_eq!(monitor.workspaces[0].window_count(), 0);
+    assert_eq!(monitor.active_workspace_idx, 1);
+    assert_eq!(
+        monitor.workspaces[1]
+            .windows()
+            .map(|window| window.0.id)
+            .collect::<Vec<_>>(),
+        [1]
+    );
+}
+
+#[test]
+fn smart_workspace_move_reuses_neighbor_for_single_unnamed_window() {
+    let ops = [
+        Op::AddOutput(1),
+        Op::AddWindow {
+            params: TestWindowParams::new(1),
+        },
+        Op::FocusWorkspaceDown,
+        Op::AddWindow {
+            params: TestWindowParams::new(2),
+        },
+    ];
+
+    let mut layout = check_ops(ops);
+    let workspace_count = match &layout.monitor_set {
+        MonitorSet::Normal { monitors, .. } => monitors[0].workspaces.len(),
+        MonitorSet::NoOutputs { .. } => unreachable!(),
+    };
+    layout.move_up_or_to_smart_workspace_up(true);
+    layout.verify_invariants();
+
+    let MonitorSet::Normal { monitors, .. } = &layout.monitor_set else {
+        unreachable!()
+    };
+    let monitor = &monitors[0];
+
+    assert_eq!(monitor.workspaces.len(), workspace_count);
+    assert_eq!(monitor.active_workspace_idx, 0);
+    assert_eq!(
+        monitor.workspaces[0]
+            .windows()
+            .map(|window| window.0.id)
+            .collect::<Vec<_>>(),
+        [1, 2]
+    );
+}
+
+#[test]
+fn smart_workspace_move_prefers_internal_column_move() {
+    let ops = [
+        Op::AddOutput(1),
+        Op::AddWindow {
+            params: TestWindowParams::new(1),
+        },
+        Op::AddWindow {
+            params: TestWindowParams::new(2),
+        },
+        Op::ConsumeOrExpelWindowLeft { id: None },
+    ];
+
+    let mut layout = check_ops(ops);
+    layout.move_up_or_to_smart_workspace_up(true);
+    layout.verify_invariants();
+
+    let MonitorSet::Normal { monitors, .. } = &layout.monitor_set else {
+        unreachable!()
+    };
+    let monitor = &monitors[0];
+
+    assert_eq!(monitor.workspaces.len(), 2);
+    assert_eq!(monitor.active_workspace_idx, 0);
+    assert_eq!(
+        monitor.workspaces[0]
+            .windows()
+            .map(|window| window.0.id)
+            .collect::<Vec<_>>(),
+        [2, 1]
+    );
+}
+
+#[test]
 fn empty_workspaces_dont_move_back_to_original_output() {
     let ops = [
         Op::AddOutput(1),
