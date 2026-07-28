@@ -4349,10 +4349,10 @@ impl<W: LayoutElement> Layout<W> {
                         .iter()
                         .position(|ws| ws.has_window(&win_id))
                         .unwrap();
-                    let source_was_active = mon.workspaces[mon.active_workspace_idx].id()
-                        == source_workspace_id;
-                    let active_is_empty = !mon.workspaces[mon.active_workspace_idx]
-                        .has_windows_or_name();
+                    let source_was_active =
+                        mon.workspaces[mon.active_workspace_idx].id() == source_workspace_id;
+                    let active_is_empty =
+                        !mon.workspaces[mon.active_workspace_idx].has_windows_or_name();
 
                     if source_was_active
                         && active_is_empty
